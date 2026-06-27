@@ -1,0 +1,10 @@
+{
+  "name": "com.zerowq.unityplugin.singleton",
+  "displayName": "Singleton",
+  "unity": "2022.3",
+  "version": "1.0.0",
+  "description": "Singleton for Unity",
+  "author": {
+    "name": "zeroWq"
+  }
+}
