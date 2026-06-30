@@ -1,13 +1,12 @@
-using System;
-using System.Dynamic;
 using UnityEngine;
 
 namespace UnityPlugin
 {
-    public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
+    public class Singleton<T> : MonoBehaviour where T : Singleton<T>
     {
+        protected static T _instance;
+
         static bool _destroyed;
-        static T _instance;
 
         public static T Instance
         {
@@ -21,7 +20,12 @@ namespace UnityPlugin
                 _instance = FindAnyObjectByType<T>();
                 if (_instance == null && !string.IsNullOrEmpty(resPath))
                 {
-                    _instance = Resources.Load<T>(resPath);
+                    var prefab = Resources.Load<T>(resPath);
+                    if (prefab)
+                    {
+                        _instance = Instantiate(prefab);
+                        if (_instance) _instance.name = prefab.name;
+                    }
                 }
 
                 if (_instance == null)
@@ -38,7 +42,8 @@ namespace UnityPlugin
         {
             if (_instance)
             {
-                Destroy(_instance.gameObject);
+                if (Application.isPlaying) Destroy(_instance.gameObject);
+                else DestroyImmediate(_instance.gameObject);
                 _instance = null;
                 _destroyed = true;
             }
@@ -48,11 +53,20 @@ namespace UnityPlugin
         {
             if (_instance && _instance != this)
             {
-                Destroy(gameObject);
+                if (Application.isPlaying) Destroy(_instance.gameObject);
+                else DestroyImmediate(_instance.gameObject);
                 return;
             }
 
+            _instance = this as T;
             DontDestroyOnLoad(gameObject);
+
+            OnAwake();
+        }
+
+        protected virtual void OnAwake()
+        {
+
         }
 
         protected virtual void OnDestroy()
