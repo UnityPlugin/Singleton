@@ -1,3 +1,4 @@
+using System.Reflection;
 using UnityEngine;
 
 namespace UnityPlugin
@@ -6,21 +7,26 @@ namespace UnityPlugin
     {
         protected static T _instance;
 
+        static bool _configUpdated;
+        static string _resPath;
+        static bool _autoCreate = true;
+        static bool _dontDestroyOnLoad = true;
+
         static bool _destroyed;
 
-        public static T Instance
-        {
-            get => _instance ?? CreateInstance();
-        }
+        public static T Instance { get => GetInstance(); }
 
-        public static T CreateInstance(string resPath = null)
+        public static T CreateInstance(bool forceCreate = false)
         {
-            if (_instance == null && !_destroyed)
+            if (_instance == null)
             {
-                _instance = FindAnyObjectByType<T>();
-                if (_instance == null && !string.IsNullOrEmpty(resPath))
+                UpdateConfig();
+
+                if (!forceCreate && !_autoCreate) return null;
+
+                if (!string.IsNullOrEmpty(_resPath))
                 {
-                    var prefab = Resources.Load<T>(resPath);
+                    var prefab = Resources.Load<T>(_resPath);
                     if (prefab)
                     {
                         _instance = Instantiate(prefab);
@@ -59,7 +65,9 @@ namespace UnityPlugin
             }
 
             _instance = this as T;
-            DontDestroyOnLoad(gameObject);
+
+            UpdateConfig();
+            if (_dontDestroyOnLoad) DontDestroyOnLoad(gameObject);
 
             OnAwake();
         }
@@ -75,6 +83,39 @@ namespace UnityPlugin
             {
                 _instance = null;
                 _destroyed = true;
+            }
+        }
+
+
+        static T GetInstance()
+        {
+            if (_instance) return _instance;
+
+            _instance = FindAnyObjectByType<T>();
+            if (_instance) return _instance;
+
+            if (_destroyed) return null;
+
+            UpdateConfig();
+
+            if (_autoCreate) return CreateInstance(false);
+
+            return null;
+        }
+
+        static void UpdateConfig()
+        {
+            if (!_configUpdated)
+            {
+                var configAttribute = typeof(T).GetCustomAttribute<SingletonConfigAttribute>();
+                if (configAttribute != null)
+                {
+                    _resPath = configAttribute.ResourcePath;
+                    _autoCreate = configAttribute.AutoCreate;
+                    _dontDestroyOnLoad = configAttribute.DontDestroyOnLoad;
+                }
+
+                _configUpdated = true;
             }
         }
     }
