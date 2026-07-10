@@ -14,7 +14,7 @@ namespace UnityPlugin
 
         static bool _destroyed;
 
-        public static T Instance { get => GetInstance(); }
+        public static T Instance => GetInstance();
 
         public static T CreateInstance(bool forceCreate = false)
         {
@@ -91,9 +91,13 @@ namespace UnityPlugin
         {
             if (_instance) return _instance;
 
+#if UNITY_2020_1_OR_NEWER
             _instance = FindAnyObjectByType<T>();
-            if (_instance) return _instance;
+#else
+            _instance = FindObjectOfType<T>();
+#endif
 
+            if (_instance) return _instance;
             if (_destroyed) return null;
 
             UpdateConfig();
