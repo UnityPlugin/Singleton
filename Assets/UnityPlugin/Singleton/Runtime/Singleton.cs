@@ -16,6 +16,11 @@ namespace UnityPlugin
 
         public static T Instance => GetInstance();
 
+        public static bool HasInstance()
+        {
+            return _instance != null;
+        }
+
         public static T CreateInstance(bool forceCreate = false)
         {
             if (_instance == null)
